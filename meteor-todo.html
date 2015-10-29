@@ -13,10 +13,15 @@
         Hide Completed Tasks
       </label>
 
-      <!-- New task input form -->
-      <form class="new-task">
-        <input type="text" name="text" placeholder="Type to add new tasks">
-      </form>
+      <!-- Account functionality from accounts-ui & accounts-password meteor plugins -->
+      {{> loginButtons}}
+
+      {{#if currentUser}}
+        <!-- New task input form -->
+        <form class="new-task">
+          <input type="text" name="text" placeholder="Type to add new tasks">
+        </form>
+      {{/if}}
     </header>
 
     <ul>
@@ -35,6 +40,6 @@
 
     <input type="checkbox" checked="{{checked}}" class="toggle-checked">
 
-    <span class="text">{{text}}</span>
+    <span class="text"><strong>{{username}}</strong> - {{text}}</span>
   </li>
 </template>
