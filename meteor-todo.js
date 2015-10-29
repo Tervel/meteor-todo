@@ -1,5 +1,11 @@
+// Global alias for Tasks to use, lets us utilise "use strict"
+G = this;
+"use strict";
+
 // Create a new collection
-Tasks = new Mongo.Collection("tasks");
+G.Tasks = new Mongo.Collection("tasks");
+
+Tasks.find({}); // Part of global alias
 
 // This code only runs on the client
 if (Meteor.isClient) {
@@ -32,12 +38,7 @@ if (Meteor.isClient) {
       var text = event.target.text.value;
 
       // Insert a task into the collection
-      Tasks.insert({
-        text: text,
-        createdAt: new Date(), // current time
-        owner: Meteor.userId(), // _id of logged in user
-        username: Meteor.user().username // username of logged in user
-      });
+      Meteor.call("addTask", text); // Calls Tasks.insert method from Meteor.methods
 
       // Clear form
       event.target.text.value = "";
@@ -51,13 +52,11 @@ if (Meteor.isClient) {
   Template.task.events({
     "click .toggle-checked": function() {
       // Set the checked property to the opposite of its current value
-      Tasks.update(this._id, { // every inserted document has a unique _id field, current task == this._id
-        $set: { checked: !this.checked }
-      });
+      Meteor.call("setChecked", this._id, !this.checked);
     },
     // Remove task when .delete is clicked
     "click .delete": function() {
-      Tasks.remove(this._id);
+      Meteor.call("deleteTask", this._id);
     }
   });
 
@@ -66,6 +65,31 @@ if (Meteor.isClient) {
     passwordSignupFields: "USERNAME_ONLY"
   });
 } // end isClient
+
+// Implementing secure insert, update, remove functionality
+// after running "meteor remove insecure" to prevent client
+// side altering of the DB.
+Meteor.methods({
+  addTask: function(text) {
+    // Make sure the user is logged in before inserting a task
+    if (!Meteor.userId()) {
+      throw new Meteor.Error("not-authorized");
+    }
+
+    Tasks.insert({
+      text: text,
+      createdAt: new Date(),
+      owner: Meteor.userId(),
+      username: Meteor.user().username
+    });
+  },
+  deleteTask: function(taskId) {
+    Tasks.remove(taskId);
+  },
+  setChecked: function(taskId, setChecked) {
+    Tasks.update(taskId, { $set: { checked: setChecked } });
+  }
+});
 
 // Server side code
 if (Meteor.isServer) {
